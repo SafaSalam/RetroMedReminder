@@ -1,0 +1,32 @@
+body {
+  background-color: #1a0025;
+  font-family: 'Courier New', monospace;
+  color: #f0e;
+  padding: 2rem;
+  text-shadow: 1px 1px 0 #000;
+}
+
+h1 {
+  font-size: 2em;
+  text-align: center;
+}
+
+form {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+input, select, button {
+  padding: 0.5rem;
+  background: #300050;
+  border: 1px solid #f0e;
+  color: #fff;
+}
+
+button {
+  cursor: pointer;
+  background-color: #f0e;
+  color: #000;
+}

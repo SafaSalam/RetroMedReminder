@@ -1,0 +1,27 @@
+{
+    "name": "medicine-reminder",
+    "version": "1.0.0",
+    "description": "Electron app to remind users to take morning and night medicines",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron .",
+        "dist": "electron-builder"
+    },
+    "build": {
+        "appId": "com.yourname.medreminder",
+        "productName": "MedReminder",
+        "win": {
+            "target": "nsis",
+           
+                "icon": "icon.ico"
+              
+        }
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "electron": "^29.3.0",
+        "electron-builder": "^26.0.12"
+    }
+}

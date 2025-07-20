@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>🕹️ Retro Med Reminder</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Press Start 2P', cursive;
+      background-color: #1d002c;
+      color: #d9b3ff;
+      padding: 2rem;
+      margin: 0;
+      background-image: repeating-linear-gradient(
+        45deg,
+        #3b0066 0px,
+        #3b0066 10px,
+        #1d002c 10px,
+        #1d002c 20px
+      );
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.5rem;
+      color: #ffffff;
+      text-shadow: 0 0 5px #ff00ff, 0 0 10px #ff00ff;
+      animation: pulse 1.5s infinite;
+      margin-bottom: 2rem;
+    }
+
+    @keyframes pulse {
+      0% { text-shadow: 0 0 5px #ff00ff; }
+      50% { text-shadow: 0 0 15px #ff66ff; }
+      100% { text-shadow: 0 0 5px #ff00ff; }
+    }
+
+    form {
+      max-width: 400px;
+      margin: 0 auto 2rem auto;
+      padding: 1.5rem;
+      border: 4px double #9b59b6;
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    label {
+      font-size: 0.75rem;
+      margin-bottom: 0.3rem;
+      display: block;
+    }
+
+    input, select {
+      font-family: 'Press Start 2P', cursive;
+      width: 100%;
+      padding: 0.7rem;
+      font-size: 0.75rem;
+      margin-bottom: 1rem;
+      background: #2e003e;
+      color: #fff;
+      border: 2px solid #b266ff;
+    }
+
+    button {
+      font-family: 'Press Start 2P', cursive;
+      width: 100%;
+      padding: 0.7rem;
+      background: #6a0dad;
+      color: white;
+      border: 2px solid #ffccff;
+      cursor: pointer;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      transition: transform 0.2s ease;
+    }
+
+    button:hover {
+      background: #9b59b6;
+      transform: scale(1.05);
+    }
+
+    #reminderList {
+      max-width: 600px;
+      margin: auto;
+    }
+
+    h4 {
+      font-size: 1rem;
+      color: #ffccff;
+      border-bottom: 2px dashed #b266ff;
+      margin-top: 2rem;
+      padding-bottom: 0.3rem;
+    }
+
+    #reminderList div {
+      padding: 0.8rem;
+      margin: 0.5rem 0;
+      border: 2px dotted #aa66ff;
+      background-color: rgba(255, 255, 255, 0.07);
+      font-size: 0.75rem;
+    }
+
+    .taken {
+      color: #00ff00;
+    }
+
+    #clearAllBtn {
+      background: #ff007f;
+      max-width: 400px;
+      margin: 2rem auto;
+      display: block;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>💊 Retro Med Reminder</h1>
+
+  <form id="reminderForm">
+    <label for="medicineName">Medicine Name</label>
+    <input type="text" id="medicineName" required />
+
+    <label for="medicineTime">Time (HH:MM - 24hr)</label>
+    <input type="time" id="medicineTime" required />
+
+    <label for="timeOfDay">Time of Day</label>
+    <select id="timeOfDay" required>
+      <option value="morning">Morning</option>
+      <option value="afternoon">Afternoon</option>
+      <option value="evening">Evening</option>
+      <option value="night">Night</option>
+    </select>
+
+    <button type="submit">➕ Add Reminder</button>
+  </form>
+
+  <div id="reminderList"></div>
+  <button id="clearAllBtn">🗑️ Clear All Reminders</button>
+
+  <audio id="buzzer" src="https://freesound.org/data/previews/331/331912_3248244-lq.mp3" preload="auto"></audio>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const form = document.getElementById('reminderForm');
+      const list = document.getElementById('reminderList');
+      const buzzer = document.getElementById('buzzer');
+
+      function loadReminders() {
+        const reminders = JSON.parse(localStorage.getItem('reminders') || '{}');
+        list.innerHTML = '';
+
+        Object.entries(reminders).forEach(([timeOfDay, meds]) => {
+          if (!Array.isArray(meds) || meds.length === 0) return;
+
+          const section = document.createElement('div');
+          section.innerHTML = `<h4>${timeOfDay.toUpperCase()}</h4>`;
+
+          meds.forEach((med, index) => {
+            const medDiv = document.createElement('div');
+            let content = `<strong>${med.name}</strong> at ${med.time} `;
+
+            if (med.taken) {
+              content += '<span class="taken">✅ Taken</span>';
+            } else {
+              content += `
+                <button type="button" data-action="take" data-time="${timeOfDay}" data-index="${index}">Mark as Taken</button>
+                <button type="button" data-action="snooze" data-time="${timeOfDay}" data-index="${index}">Snooze</button>
+              `;
+            }
+
+            medDiv.innerHTML = content;
+            section.appendChild(medDiv);
+          });
+
+          list.appendChild(section);
+        });
+      }
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const medName = document.getElementById('medicineName').value.trim();
+        const medTime = document.getElementById('medicineTime').value;
+        const timeOfDay = document.getElementById('timeOfDay').value;
+
+        if (!medName || !medTime) return;
+
+        const reminders = JSON.parse(localStorage.getItem('reminders') || '{}');
+        if (!reminders[timeOfDay]) reminders[timeOfDay] = [];
+
+        reminders[timeOfDay].push({ name: medName, time: medTime, taken: false });
+        localStorage.setItem('reminders', JSON.stringify(reminders));
+
+        form.reset();
+        loadReminders();
+      });
+
+      list.addEventListener('click', (e) => {
+        const action = e.target.getAttribute('data-action');
+        const timeOfDay = e.target.getAttribute('data-time');
+        const index = e.target.getAttribute('data-index');
+
+        if (!action || index === null) return;
+
+        const reminders = JSON.parse(localStorage.getItem('reminders') || '{}');
+        const med = reminders[timeOfDay][index];
+
+        if (action === 'take') {
+          med.taken = true;
+        } else if (action === 'snooze') {
+          const newTime = prompt("Enter new time (HH:MM):", med.time);
+          if (newTime) med.time = newTime;
+        }
+
+        localStorage.setItem('reminders', JSON.stringify(reminders));
+        loadReminders();
+      });
+
+      document.getElementById('clearAllBtn').addEventListener('click', () => {
+        if (confirm("Are you sure you want to clear all reminders?")) {
+          localStorage.removeItem('reminders');
+          loadReminders();
+        }
+      });
+
+      function checkDueReminders() {
+        const now = new Date();
+        const currentTime = now.toTimeString().slice(0, 5);
+        const reminders = JSON.parse(localStorage.getItem('reminders') || '{}');
+
+        Object.entries(reminders).forEach(([_, meds]) => {
+          meds.forEach((med) => {
+            if (!med.taken && med.time === currentTime) {
+              sendNotification(`Time for ${med.name}`, `Take your medicine scheduled at ${med.time}`);
+              buzzer.play();
+            }
+          });
+        });
+      }
+
+      function sendNotification(title, body) {
+        if (!('Notification' in window)) return;
+
+        if (Notification.permission === 'granted') {
+          new Notification(title, {
+            body,
+            icon: 'https://cdn-icons-png.flaticon.com/512/1086/1086276.png',
+            requireInteraction: true
+          });
+        } else if (Notification.permission !== 'denied') {
+          Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+              sendNotification(title, body);
+            }
+          });
+        }
+      }
+
+      if ('Notification' in window && Notification.permission !== 'granted') {
+        Notification.requestPermission();
+      }
+
+      loadReminders();
+      setInterval(checkDueReminders, 30000); // Check every 30s
+    });
+  </script>
+</body>
+</html>
